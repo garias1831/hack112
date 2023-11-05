@@ -1,5 +1,6 @@
 from cmu_graphics import *
 import string
+from webscraper.bot import BotManager
 
 ### Controller
 
@@ -17,6 +18,10 @@ def getLocations(app):
 def onAppStart(app):
 
     getLocations(app)
+
+    #Webscrapin'
+    app.manager = BotManager()
+
 
     #Values 
     app.userTickerInput = ''
@@ -49,7 +54,8 @@ def onAppStart(app):
                 'December 8, 2023', 1, 2, 3, 4]
     
 
-
+def onStep(app):
+    getLocations(app)
 
 def onKeyPress(app, key):
     if app.textEntry == True:
@@ -62,7 +68,7 @@ def onKeyPress(app, key):
     if (key=='down') and (app.dateIndex<len(app.dates)):
         app.dateIndex+=1
         app.optionIndex +=1
-    elif (key=='up') and (app.dateIndex>=len(app.dates)):
+    elif (key=='up') and (app.dateIndex>10):
         app.dateIndex-=1
         app.optionIndex -= 1
 
@@ -75,13 +81,15 @@ def onMousePress(app, mouseX, mouseY):
             app.goButtonPressed[i] = True
             app.textEntry = False
 
-            if i == 1:
-                pass
+            if i == 0:
+
+                app.dateList = app.manager.get_dates(app.userTickerInput)
+                print(app.dateList)
                 #Call The first part of bot
-            elif i == 2:
+            elif i == 1:
                 pass
                 #Call the second part of bot
-            elif i == 3:
+            elif i == 2:
                 pass
                 #Call the graph function. 
 
@@ -117,7 +125,7 @@ def onMousePress(app, mouseX, mouseY):
 
 def onMouseRelease(app, mouseX, mouseY):
     app.goButtonPressed = [False, False, False]
-    getLocations(app)
+    
 
 
 
@@ -153,13 +161,13 @@ def drawTextBox(app): #Draws the Box for text entry
 def drawTickerSelection(app):
     drawTextBox(app)
 
-    # drawLabel("Or choose one of the following:", app.width/6, app.height * 9 / 24)
-    # buttonLabels = ['APPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA']
+    drawLabel("Or choose one of the following:", app.width/6, app.height * 9 / 24)
+    buttonLabels = ['APPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA']
 
     # boxWidth = app.width/3 - 2 * app.bumper
     # boxHeight = app.height/6 - 2 * app.bumper
     # for i in range(5):
-    #     rectTop = app.height/3 + i*boxHeight
+    #     rectTop = 5 * app.height/12 + i*boxHeight
     #     drawRect(app.bumper, rectTop, boxWidth, boxHeight, fill = None, border = 'black')
     #     drawLabel(buttonLabels[i], app.width/6, rectTop + app.height / 12)
 
@@ -216,6 +224,13 @@ def drawInfoScreen(app):
     pass
 
 def redrawAll(app):
+
+    drawLine(0, app.height/3, 100, app.height/3)
+    drawLine(0, app.height/2, 100, app.height/2)
+    drawLine(0, 2 * app.height/3, 100, 2 * app.height/3)
+    drawLine(0, 5 * app.height/6, 100, 5 * app.height/6)
+
+
     if app.infoScreen:
         drawInfoScreen(app)
     else:
@@ -227,10 +242,11 @@ def redrawAll(app):
         drawOptionSelection(app)
 
 
-### Main
+### Main because cmu graphics cant handle files
 
 def main():
-    runApp(width = 900, height = 600)
-    
+    runApp()
 
-main()
+#width = 900, height = 600
+
+main()    
