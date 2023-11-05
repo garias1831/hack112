@@ -1,3 +1,5 @@
+from config.definitions import ROOT_DIR
+
 def main():
     pass
 
