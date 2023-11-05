@@ -13,8 +13,6 @@ def getLocations(app):
                         app.bumper + 2 * app.width/3, buttonTop, app.width - app.bumper, buttonBottom]
     app.textboxCorners = [app.bumper, app.bumper + app.height/6, app.width/3 - app.bumper, app.height / 3 - app.bumper]
 
-
-
 def onAppStart(app):
 
     getLocations(app)
@@ -31,8 +29,6 @@ def onAppStart(app):
     app.optionsDF = [] # From Bot 2
     app.userOptionInput = ''
     
-    
-
     #States:
     app.goButtonPressed = [False, False, False]
     app.textEntry = False
@@ -40,18 +36,18 @@ def onAppStart(app):
     app.isDateSelected=False
     app.isOptionSelected=False
 
-    
     app.dateIndex=10
     app.optionIndex=10
     
+    app.tickerButtonSelected = None
     app.dateSelected=None
     app.optionSelected=None
 
     #Testing
     app.options = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+    app.buttonLabels = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA']
     
     
-
 def onStep(app):
     getLocations(app)
 
@@ -70,13 +66,12 @@ def onKeyPress(app, key):
         app.dateIndex-=1
         app.optionIndex -= 1
 
-# def getOptionsStringsFromDf(app, df): #Not super clean but related to formatting data so maybe chill ?
-#     '''Takes in a DataFrame of the selected options and returns a list of lists<str> each
-#         of the form ['strike-price', 'implied-volatility']'''
-    
-    
-
 def onMousePress(app, mouseX, mouseY):
+    #Check info
+    if mouseX > 5 * app.width / 6 and mouseY < app.height / 6:
+        app.infoScreen = not app.infoScreen
+
+
     #Check if the go buttons are being pressed
     for i in range(3):
         x0, y0, x1, y1 = app.goButtonCorners[i*4:4*(i+1)]
@@ -112,8 +107,18 @@ def onMousePress(app, mouseX, mouseY):
     x0, y0, x1, y1 = app.textboxCorners[0:4]
     if mouseX > x0 and mouseX < x1 and mouseY > y0 and mouseY < y1:
         app.textEntry = True
+        app.tickerButtonSelected = None
     else:
-        app.textEntry = False   
+        app.textEntry = False  
+
+    #Check Ticker Buttons
+    if app.bumper < mouseX < app.width/3 - app.bumper:
+        for i in range(5):
+            rectTop = 5 * app.height/12 + i*app.height/12
+            boxHeight = app.height/12
+            if rectTop < mouseY < rectTop + boxHeight:
+                app.tickerButtonSelected = i
+                app.userTickerInput = app.buttonLabels[i]
 
     #Date List
     if app.width/2-app.width/8 <= mouseX <= app.width/2+app.width/8:
@@ -134,29 +139,23 @@ def onMousePress(app, mouseX, mouseY):
                 app.isOptionSelected=True
                 app.optionSelected=i
 
-    
-
-
-
 def onMouseRelease(app, mouseX, mouseY):
     app.goButtonPressed = [False, False, False]
     
-
-
-
 ### View
 def drawTitle(app):
     drawLabel('Quant 112', app.width/2, app.height/12, size = 50)
-    drawLabel('Select a top 100 stock from the drop-down menu or type your own', app.bumper, app.bumper, align = 'left')
+    drawOval(11 * app.width / 12, app.height/12, app.width/7, app.height/7, fill = None, border = 'black', align = 'center')
+    drawLabel('I', 11 * app.width / 12, app.height/12, size = 50, bold = True, font = 'monospace')
 
 def drawGoButton(app): #Draws all 3 buttons
     for i in range(3):
         x0, y0, x1, y1 = app.goButtonCorners[i*4: ((i+1) * 4)]
 
         if app.goButtonPressed[i] == True:
-            buttonColor = 'lightGreen'
+            buttonColor = 'pink'
         else:
-            buttonColor = 'green'
+            buttonColor = 'deeppink'
         drawRect(x0, y0, x1 - x0, y1-y0, fill = buttonColor, border = 'black')
         drawLabel('Go!', x0 + (x1-x0)/2, y0 + (y1-y0)/2)
 
@@ -177,15 +176,18 @@ def drawTickerSelection(app):
     drawTextBox(app)
 
     drawLabel("Or choose one of the following:", app.width/6, app.height * 9 / 24)
-    buttonLabels = ['APPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA']
+    
 
-    # boxWidth = app.width/3 - 2 * app.bumper
-    # boxHeight = app.height/6 - 2 * app.bumper
-    # for i in range(5):
-    #     rectTop = 5 * app.height/12 + i*boxHeight
-    #     drawRect(app.bumper, rectTop, boxWidth, boxHeight, fill = None, border = 'black')
-    #     drawLabel(buttonLabels[i], app.width/6, rectTop + app.height / 12)
-
+    boxWidth = app.width/3 - 2 * app.bumper
+    boxHeight = app.height/12
+    for i in range(5):
+        if i == app.tickerButtonSelected:
+            color = 'lightgray'
+        else:
+            color = 'white'
+        rectTop = 5 * app.height/12 + i*boxHeight
+        drawRect(app.bumper, rectTop, boxWidth, boxHeight, fill = color, border = 'black')
+        drawLabel(app.buttonLabels[i], app.width/6, rectTop + boxHeight/2)
 
 def drawDateSelection(app):
     if (app.dateIndex <= len(app.dates)) and (len(app.dates)<=10):
@@ -236,21 +238,26 @@ def drawOptionSelection(app):
                       rectTop + rectHeight/2)
 
 def drawInfoScreen(app):
-    pass
+    info = 'This project was built by a group of freshman 15-112 students from stever house durring the anual Hack-112 hackathon. It uses a combination of web scraping and the dark choles algorithim to preidct \
+    information about various stock option calls.'
+    drawLabel('About', app.width/2, app.height/6 + 20, size = 20)
+    drawLabel('This project was built by a group of freshman 15-112 students from stever house durring the anual Hack-112 hackathon.', app.width/2, app.height/6 + 40, size = 16) 
+    drawLabel('It uses a combination of web scraping and the Black-Scholes algorithim to predict information about various stock option calls', app.width/2, app.height/6 + 60, size = 16)
+
+    drawLabel('Instructions', app.width/2, app.height/6 + 100, size = 20)
+    drawLabel('1. Enter the ticker for any US Stock. If you cannot think of one use one of the built in button. Press go to retrieve date options.', app.width/2, app.height/6 + 120, size = 16)
+    drawLabel('2. Select a date for that stock. Select a date by clicking on it. Scroll through options using the up and down arrows. Press go when you have selected an option.', app.width/2, app.height/6 + 140, size = 16)
+    drawLabel('3. Select an option for that day. Selection is the same as for dates. Press go to create graphs.', app.width/2, app.height/6 + 160, size = 16)
+ 
 
 def redrawAll(app):
-
-    drawLine(0, app.height/3, 100, app.height/3)
-    drawLine(0, app.height/2, 100, app.height/2)
-    drawLine(0, 2 * app.height/3, 100, 2 * app.height/3)
-    drawLine(0, 5 * app.height/6, 100, 5 * app.height/6)
-
+    drawTitle(app)
 
     if app.infoScreen:
         drawInfoScreen(app)
     else:
 
-        drawTitle(app)
+        
         drawGoButton(app)
         drawTickerSelection(app)
         drawDateSelection(app)
@@ -260,8 +267,8 @@ def redrawAll(app):
 ### Main because cmu graphics cant handle files
 
 def main():
-    runApp()
+    runApp(width = 900, height = 600)
 
-#width = 900, height = 600
+
 
 main()    
