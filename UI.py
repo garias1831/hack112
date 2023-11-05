@@ -1,8 +1,7 @@
 from cmu_graphics import *
 import string
 from webscraper.bot import BotManager
-
-### Controller
+from quant import run_quant
 
 def getLocations(app):
     app.bumper = 10
@@ -20,7 +19,6 @@ def onAppStart(app):
     #Webscrapin'
     app.manager = BotManager()
     app.manager.load_bot_instance()
-
 
     #Values 
     app.userTickerInput = ''
@@ -41,12 +39,14 @@ def onAppStart(app):
     
     app.tickerButtonSelected = None
     app.dateSelected=None
+    app.dateSubmission = None
     app.optionSelected=None
+    app.optionSubmission =None
 
     #Testing
-    app.options = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+    app.options = []
+    app.strike_and_iv = []
     app.buttonLabels = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA']
-    
     
 def onStep(app):
     getLocations(app)
@@ -71,7 +71,6 @@ def onMousePress(app, mouseX, mouseY):
     if mouseX > 5 * app.width / 6 and mouseY < app.height / 6:
         app.infoScreen = not app.infoScreen
 
-
     #Check if the go buttons are being pressed
     for i in range(3):
         x0, y0, x1, y1 = app.goButtonCorners[i*4:4*(i+1)]
@@ -82,27 +81,23 @@ def onMousePress(app, mouseX, mouseY):
             if i == 0:
                 app.manager.load_bot_instance()
                 app.dates = app.manager.get_dates(app.userTickerInput)
-                print(app.dates)
                 #Call The first part of bot
-            elif i == 1:
+            elif i == 1: #FIXME: these strings are wrong
                 if app.dates != None:
-                    print(app.dates[app.dateSelected])
-                    df = app.manager.get_options_df(app.dates[app.dateSelected])
-                    strike_and_iv = app.manager.options_df_to_list(df)
-                    app.options = app.manager.get_options_strings(strike_and_iv)
-
-                    print(df)
-                #Call the second part of bot
+                    app.dateSubmission = app.dateSelected
+                    df = app.manager.get_options_df(app.dates[app.dateSubmission + app.dateIndex -10])
+                    app.strike_and_iv = app.manager.options_df_to_list(df)
+                    app.options = app.manager.get_options_strings(app.strike_and_iv)
+                    
+                    app.dateSubmission = app.dateSelected
+                    app.dateSelected = None
 
             elif i == 2:
-                df = app.manager.get_options_df(app.dates[app.dateSelected])
-                strike_and_iv = app.manager.options_df_to_list(df)
-                strike = strike_and_iv[app.optionSelected][0]
-                iv = strike_and_iv[app.optionSelected][1]
-
-                print(strike, iv)
-                #Call the graph function. 
-
+                strike = app.strike_and_iv[app.optionSelected + app.optionIndex - 10][0]
+                iv = app.strike_and_iv[app.optionSelected + app.optionIndex - 10][1]
+                
+                run_quant(K=strike, σ=iv, fulldate=app.dates[app.dateSubmission + app.dateIndex - 10]) #Call the graph function. 
+                
     #Check if the user clicks on the text box
     x0, y0, x1, y1 = app.textboxCorners[0:4]
     if mouseX > x0 and mouseX < x1 and mouseY > y0 and mouseY < y1:
@@ -137,7 +132,7 @@ def onMousePress(app, mouseX, mouseY):
                 app.height/30):
 
                 app.isOptionSelected=True
-                app.optionSelected=i
+                app.optionSelected= i 
 
 def onMouseRelease(app, mouseX, mouseY):
     app.goButtonPressed = [False, False, False]
@@ -177,7 +172,6 @@ def drawTickerSelection(app):
 
     drawLabel("Or choose one of the following:", app.width/6, app.height * 9 / 24)
     
-
     boxWidth = app.width/3 - 2 * app.bumper
     boxHeight = app.height/12
     for i in range(5):
@@ -218,7 +212,6 @@ def drawOptionSelection(app):
         options = app.options
     else:
         options = app.options[(app.optionIndex-10):app.optionIndex]
-
     #entries
     for i in range(10):
         if i == app.optionSelected:
@@ -249,7 +242,6 @@ def drawInfoScreen(app):
     drawLabel('2. Select a date for that stock. Select a date by clicking on it. Scroll through options using the up and down arrows. Press go when you have selected an option.', app.width/2, app.height/6 + 140, size = 16)
     drawLabel('3. Select an option for that day. Selection is the same as for dates. Press go to create graphs.', app.width/2, app.height/6 + 160, size = 16)
  
-
 def redrawAll(app):
     drawTitle(app)
 
@@ -263,12 +255,9 @@ def redrawAll(app):
         drawDateSelection(app)
         drawOptionSelection(app)
 
-
 ### Main because cmu graphics cant handle files
 
 def main():
     runApp(width = 900, height = 600)
-
-
 
 main()    

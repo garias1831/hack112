@@ -89,7 +89,6 @@ class BotManager():
 
             options.append([strike, iv])
 
-        #print(options_strings_list)
         return options
     
     def get_options_strings(self, strike_and_iv):
@@ -101,47 +100,3 @@ class BotManager():
             iv = strike_and_iv[i][1]
             options_strings.append(f'Strike: {strike} Implied Volatility:{iv}')
         return options_strings
-
-
-#TODO: delete this
-#Testing for bot excecution; not the real main call==========================================================
-def main():
-    options = webdriver.ChromeOptions()
-    #options.add_experimental_option('detach', True)
-    bot = OptionsBot(options)
-
-
-    ticker = 'et'
-    #========================================
-    bot.get(r'https://finance.yahoo.com/') #Get the inital webpage
-    bot.fetch_stock(ticker) #TODO: get ticker from UI
-    bot.load_options_page()
-    date_list = bot.get_expiry_dates()
-    if date_list is not None:
-        bot.load_options_on_date(date_list[0])
-        df = bot.get_options_df()
-        print(df)
-    else:
-        print('No options data found for this stock.')
-    # manager = BotManager() #TODO: get ticker from UI
-    # #manager.load_bot_instance()
-    # dates = manager.get_dates(ticker)
-    # print(dates)
-#=========================================================================================================
-
-#main()
-
-def main2():
-    ticker = 'aapl'
-    manager = BotManager()
-    
-    manager.load_bot_instance()
-    dates = manager.get_dates(ticker)
-    print(dates)
-
-    time.sleep(10)
-
-    df = manager.get_options_df(dates[0])
-    print(df)
-
-#main2()
