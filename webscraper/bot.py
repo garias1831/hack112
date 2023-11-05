@@ -48,6 +48,9 @@ class OptionsBot(webdriver.Chrome):
         df_options = df_options.filter(items=['Contract Name', 'Strike', 'Implied Volatility'])
 
         return df_options
+    
+    
+
 
 
 class BotManager():
@@ -74,6 +77,30 @@ class BotManager():
         df = self.bot.get_options_df()
         return df
 
+    def options_df_to_list(self, df: pd.DataFrame):
+        '''Takes in a DataFrame of the selected options and returns a list of lists<str> each
+        of the form ['strike-price', 'implied-volatility']'''
+        options_strings_list = df[['Strike', 'Implied Volatility']].iloc[df.index].to_numpy().tolist()
+
+        options = []
+        for option in options_strings_list:
+            strike = option[0]
+            iv = float(option[1][:len(option[1])-1]) #Dont include the percentage sign
+
+            options.append([strike, iv])
+
+        #print(options_strings_list)
+        return options
+    
+    def get_options_strings(self, strike_and_iv):
+
+        options_strings = []
+        for i in range(len(strike_and_iv)):
+
+            strike = strike_and_iv[i][0]
+            iv = strike_and_iv[i][1]
+            options_strings.append(f'Strike: {strike} Implied Volatility:{iv}')
+        return options_strings
 
 
 #TODO: delete this
